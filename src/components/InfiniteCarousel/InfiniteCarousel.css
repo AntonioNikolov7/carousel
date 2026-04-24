@@ -1,0 +1,46 @@
+.carousel-root {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  cursor: default;
+  user-select: none;
+  touch-action: pan-y;
+}
+
+.carousel-item {
+  position: absolute;
+  left: 0;
+  top: 0;
+  will-change: transform;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background: #2a2a2a;
+}
+
+.carousel-item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.carousel-fade {
+  position: absolute;
+  top: 0;
+  width: 60px;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.carousel-fade-left {
+  left: 0;
+  background: linear-gradient(to right, rgba(17, 17, 17, 0.7), transparent);
+}
+
+.carousel-fade-right {
+  right: 0;
+  background: linear-gradient(to left, rgba(17, 17, 17, 0.7), transparent);
+}
