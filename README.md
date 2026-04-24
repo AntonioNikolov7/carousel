@@ -1,73 +1,67 @@
-# React + TypeScript + Vite
+# Infinite Carousel
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A virtualized, infinitely-scrolling image carousel for React. Only the images currently on screen (plus a small buffer) are in the DOM. Works with mouse wheel, trackpad, and touch swipe.
 
-Currently, two official plugins are available:
+Built with React 19, TypeScript, and Vite.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Virtualized rendering** — renders only what's visible, scales to hundreds of images
+- **Infinite scroll** via cycle-space math (no array duplication)
+- **Momentum + snap** — flick-to-coast with friction and centered snap
+- **Predictive prefetch** — preloads images ahead of scroll direction
+- **Reusable component** — fully prop-configurable, no inline styles
+- **Request caching** — same-query refetches are instant
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Setup
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open http://localhost:5173.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Scripts
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | Type-check + production build |
+| `npm run preview` | Serve the built `dist/` |
+| `npm run lint` | Run ESLint |
+
+## Environment variables
+
+Defined in [.env](.env) (gitignored). Template lives in [.env.example](.env.example).
+
+
+## Project structure
+
 ```
+src/
+├── api/picsum.ts                         — data layer + request cache
+├── components/InfiniteCarousel/
+│   ├── InfiniteCarousel.tsx              — presentation
+│   ├── InfiniteCarousel.hooks.ts         — state, RAF loop, handlers
+│   ├── InfiniteCarousel.utils.ts         — pure helpers (geometry, snap, prefetch)
+│   ├── InfiniteCarousel.types.ts
+│   ├── InfiniteCarousel.constants.ts
+│   ├── InfiniteCarousel.css
+│   └── index.ts                          — public barrel
+├── App.tsx / App.css                     — demo host
+├── main.tsx                              — React mount
+└── vite-env.d.ts                         — typed env vars
+```
+
+
+## How it works (short version)
+
+- Each image is scaled to the target `height`; **prefix sums** of widths give O(1) item positions.
+- A single `scrollOffset` number drives everything; normalizing into `[0, cycleLength)` lets the same image reappear on either end without array duplication.
+- **Binary search** (`findFirstVisible`) picks the first on-screen item; we walk forward from there to build the visible window.
+- A **RAF loop** integrates velocity with friction; when velocity decays, snap takes over and eases the nearest item center to the viewport center.
+- `useLayoutEffect` synchronizes visible items and scroll position with new image sets **before paint** to prevent flashes.
+- API calls are cached by key (`Map<count, Promise>`), dedupes in-flight requests, and invalidates cached rejections so retries work.
+
